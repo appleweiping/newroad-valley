@@ -149,26 +149,75 @@ async def get_events(limit: int = 30):
 
 @app.get("/api/town/memory")
 async def get_memory_data():
+    await shared_mem_adapter.refresh()
+    await memory_adapter.refresh()
     return {
-        "decisions": shared_mem_adapter.get_decisions(),
-        "facts": shared_mem_adapter.get_facts(),
-        "lessons": shared_mem_adapter.get_lessons(),
-        "sessions": shared_mem_adapter.get_sessions(),
-        "index_preview": shared_mem_adapter.get_index()[:500],
+        "source": "adapter" if shared_mem_adapter.is_available or memory_adapter.is_available else "unavailable",
+        "shared_memory": {
+            "available": shared_mem_adapter.is_available,
+            "decisions": shared_mem_adapter.get_decisions(),
+            "facts": shared_mem_adapter.get_facts(),
+            "lessons": shared_mem_adapter.get_lessons(),
+            "sessions": shared_mem_adapter.get_sessions(),
+            "index_preview": shared_mem_adapter.get_index()[:800],
+        },
+        "agentmemory": {
+            "available": memory_adapter.is_available,
+            "total_count": memory_adapter.get_total_count(),
+            "type_counts": memory_adapter.get_type_counts(),
+            "top_concepts": memory_adapter.get_top_concepts(),
+            "recent": memory_adapter.get_recent_memories(8),
+        },
     }
 
 
 @app.get("/api/town/skills")
 async def get_skills_data():
+    await skill_adapter.refresh()
     return {
+        "source": "adapter" if skill_adapter.is_available else "unavailable",
+        "available": skill_adapter.is_available,
         "total_count": skill_adapter.get_total_count(),
-        "categories": skill_adapter.get_categories()[:10],
+        "categories": skill_adapter.get_categories(),
     }
 
 
 @app.get("/api/town/knowledge")
 async def get_knowledge_data():
-    return knowledge_adapter.get_overview()
+    await knowledge_adapter.refresh()
+    overview = knowledge_adapter.get_overview()
+    return {
+        "source": "adapter" if knowledge_adapter.is_available else "unavailable",
+        "available": knowledge_adapter.is_available,
+        **overview,
+    }
+
+
+@app.get("/api/town/devtools")
+async def get_devtools_data():
+    """Read-only devtools status from D:\\devtools"""
+    from pathlib import Path
+    devtools_dir = Path(r"D:\devtools")
+    result = {
+        "source": "adapter" if devtools_dir.exists() else "unavailable",
+        "available": devtools_dir.exists(),
+        "tools": [],
+        "agent_hub_status": hub_adapter.get_agent_status(),
+    }
+    if devtools_dir.exists():
+        cmd_files = list(devtools_dir.glob("*.cmd"))
+        result["tools"] = [f.stem for f in cmd_files[:20]]
+        state_dir = devtools_dir / "agent-hub" / "state"
+        if state_dir.exists():
+            messages_file = state_dir / "messages-claude.json"
+            if messages_file.exists():
+                try:
+                    import json
+                    msgs = json.loads(messages_file.read_text(encoding="utf-8"))
+                    result["pending_messages"] = len(msgs) if isinstance(msgs, list) else 0
+                except Exception:
+                    result["pending_messages"] = 0
+    return result
 
 
 class MoveRequest(BaseModel):

@@ -1,11 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useTownStore } from '../store/townStore';
+import { usePixelTownStore } from '../features/pixel-town/pixelTownStore';
 import type { TownState } from '../types';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
-  const setState = useTownStore((s) => s.setState);
-  const setConnected = useTownStore((s) => s.setConnected);
+  const setLegacyState = useTownStore((s) => s.setState);
+  const setLegacyConnected = useTownStore((s) => s.setConnected);
+  const setPixelState = usePixelTownStore((s) => s.setState);
+  const setPixelConnected = usePixelTownStore((s) => s.setConnected);
 
   useEffect(() => {
     let reconnectTimer: number | undefined;
@@ -20,14 +23,16 @@ export function useWebSocket() {
 
       ws.onopen = () => {
         if (cancelled) return;
-        setConnected(true);
+        setLegacyConnected(true);
+        setPixelConnected(true);
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'init' || data.type === 'tick') {
-            setState(data.state as TownState);
+            setLegacyState(data.state as TownState);
+            setPixelState(data.state);
           }
         } catch (e) {
           console.warn('[ws] parse error:', e);
@@ -36,7 +41,8 @@ export function useWebSocket() {
 
       ws.onclose = () => {
         if (cancelled) return;
-        setConnected(false);
+        setLegacyConnected(false);
+        setPixelConnected(false);
         reconnectTimer = window.setTimeout(connect, 3000);
       };
 
@@ -60,5 +66,5 @@ export function useWebSocket() {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [setState, setConnected]);
+  }, [setLegacyState, setLegacyConnected, setPixelState, setPixelConnected]);
 }
