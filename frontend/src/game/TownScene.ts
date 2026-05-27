@@ -80,12 +80,33 @@ export class TownScene extends Phaser.Scene {
       this.createFallbackBackground()
     }
 
+    this.createBuildingHotspots()
     this.createAnimations()
     this.createAgents()
     this.createPlayer()
     this.setupCamera()
     this.setupClickToMove()
     this.startNPCIdleLoop()
+  }
+
+  private createBuildingHotspots() {
+    const buildings = [
+      { id: 'town-hall', x: 768, y: 240, w: 160, h: 100 },
+      { id: 'memory-library', x: 450, y: 170, w: 130, h: 80 },
+      { id: 'knowledge-tower', x: 1100, y: 170, w: 130, h: 100 },
+      { id: 'skill-workshop', x: 280, y: 370, w: 120, h: 80 },
+      { id: 'devtools-lab', x: 280, y: 660, w: 120, h: 80 },
+      { id: 'dream-garden', x: 1250, y: 710, w: 130, h: 90 },
+    ]
+
+    for (const b of buildings) {
+      const zone = this.add.zone(b.x, b.y, b.w, b.h).setInteractive()
+      zone.setDepth(5)
+      zone.on('pointerdown', (p: Phaser.Input.Pointer) => {
+        p.event.stopPropagation()
+        window.dispatchEvent(new CustomEvent('building-click', { detail: b.id }))
+      })
+    }
   }
 
   private createFallbackBackground() {
