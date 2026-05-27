@@ -301,3 +301,22 @@ async def get_tasks():
     except:
         pass
     return {"tasks": [], "source": "unavailable"}
+
+
+@app.get("/api/inventory")
+async def get_inventory():
+    """List real projects from D: drive."""
+    projects = []
+    project_dirs = [
+        ("Research", Path(r"D:\Research")),
+        ("Game Development", Path(r"D:\Game_develop")),
+        ("Company", Path(r"D:\Company")),
+        ("Terraria Archive", Path(r"D:\Terraria_doc")),
+        ("Agent Resources", Path(r"D:\agent-resources")),
+        ("Devtools", Path(r"D:\devtools")),
+    ]
+    for name, p in project_dirs:
+        if p.exists():
+            subdirs = [d.name for d in p.iterdir() if d.is_dir()][:10]
+            projects.append({"name": name, "path": str(p), "items": subdirs, "count": len(list(p.iterdir()))})
+    return {"projects": projects}

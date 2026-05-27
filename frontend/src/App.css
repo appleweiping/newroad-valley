@@ -18,10 +18,11 @@ body { background: #f5f0e8; font-family: 'Georgia', serif; }
 
 .dialogue-panel {
   position: absolute; bottom: 20px; right: 20px;
-  width: 400px; max-height: 450px;
-  background: #f5f0e8f8; border: 2px solid #d4c8b0;
-  border-radius: 12px; display: flex; flex-direction: column;
-  box-shadow: 0 4px 20px #00000020;
+  width: 420px; max-height: 460px;
+  background: url('/assets/ui/dialogue-frame.png') center/cover no-repeat;
+  border: none; border-radius: 16px; display: flex; flex-direction: column;
+  padding: 16px 20px 12px;
+  box-shadow: 0 6px 24px #00000025;
 }
 .dialogue-header {
   display: flex; align-items: center; gap: 8px;

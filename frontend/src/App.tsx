@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import * as Phaser from 'phaser'
 import { TownScene } from './game/TownScene'
+import { InteriorScene } from './game/InteriorScene'
 import { DialoguePanel } from './ui/DialoguePanel'
 import { Sidebar } from './ui/Sidebar'
 import { BottomBar } from './ui/BottomBar'
 import { CharacterBook } from './ui/CharacterBook'
 import { SettingsPanel } from './ui/SettingsPanel'
 import { BuildingView } from './ui/BuildingView'
+import { QuestsPanel } from './ui/QuestsPanel'
+import { InventoryPanel } from './ui/InventoryPanel'
 import { useGameStore } from './store/gameStore'
 import './App.css'
 
@@ -31,7 +34,7 @@ function App() {
       height: window.innerHeight,
       pixelArt: false,
       backgroundColor: '#f5f0e8',
-      scene: [TownScene],
+      scene: [TownScene, InteriorScene],
       scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -40,6 +43,13 @@ function App() {
 
     const handleBuildingClick = (e: Event) => {
       const detail = (e as CustomEvent).detail
+      // Switch Phaser to interior scene
+      if (gameRef.current) {
+        const scene = gameRef.current.scene.getScene('TownScene')
+        if (scene) {
+          scene.scene.start('InteriorScene', { buildingId: detail })
+        }
+      }
       setBuildingId(detail)
     }
     window.addEventListener('building-click', handleBuildingClick)
@@ -65,24 +75,8 @@ function App() {
       {selectedAgent && <DialoguePanel agentId={selectedAgent} />}
       {characterBookId && <CharacterBook characterId={characterBookId} onClose={() => setCharacterBookId(null)} />}
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
-      {showQuests && (
-        <div className="book-overlay" onClick={() => setShowQuests(false)}>
-          <div className="magic-book" onClick={e => e.stopPropagation()}>
-            <button className="book-close" onClick={() => setShowQuests(false)}>×</button>
-            <img className="book-bg" src="/assets/ui/magic-book-open.png" alt="" />
-            <div className="book-content settings-content"><div className="settings-page"><h2 className="settings-title">Quests & Tasks</h2><p style={{color:'#4a3a2a',fontSize:'13px'}}>Active tasks from agentmemory will appear here. Assign work to agents by talking to them.</p></div></div>
-          </div>
-        </div>
-      )}
-      {showInventory && (
-        <div className="book-overlay" onClick={() => setShowInventory(false)}>
-          <div className="magic-book" onClick={e => e.stopPropagation()}>
-            <button className="book-close" onClick={() => setShowInventory(false)}>×</button>
-            <img className="book-bg" src="/assets/ui/magic-book-open.png" alt="" />
-            <div className="book-content settings-content"><div className="settings-page"><h2 className="settings-title">Inventory</h2><p style={{color:'#4a3a2a',fontSize:'13px'}}>Your projects, tools, and resources from D: drive.</p></div></div>
-          </div>
-        </div>
-      )}
+      {showQuests && <QuestsPanel onClose={() => setShowQuests(false)} />}
+      {showInventory && <InventoryPanel onClose={() => setShowInventory(false)} />}
       {buildingId && <BuildingView buildingId={buildingId} onClose={() => setBuildingId(null)} />}
 
       <div className="hud">
