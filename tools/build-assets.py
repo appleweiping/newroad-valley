@@ -232,7 +232,8 @@ def build_tiles_and_decor() -> None:
     copy(SPROUT / "Tilesets/Water.png", f"{t}/water.png", "ts-water",
          "spritesheet", frameWidth=16, frameHeight=16)
     copy(SPROUT / "Objects/Paths/Paths.png", f"{t}/paths.png", "ts-paths")
-    copy(SPROUT / "Tilesets/Fences/Fences.png", f"{t}/fences.png", "ts-fences")
+    copy(SPROUT / "Tilesets/Fences/Fences.png", f"{t}/fences.png", "ts-fences",
+         "spritesheet", frameWidth=16, frameHeight=16)
 
     d = "core/decor"
     copy(SPROUT / "Objects/Basic Plants/Basic Plants.png", f"{d}/plants.png", "decor-plants",
