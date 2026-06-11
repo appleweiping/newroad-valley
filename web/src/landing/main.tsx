@@ -166,8 +166,9 @@ function Arch({ lang }: { lang: Lang }) {
 const ROADMAP: { zh: string; en: string; date: string; done: boolean; descZh: string; descEn: string }[] = [
   { zh: "v1 · React/Phaser 原型", en: "v1 · React/Phaser prototype", date: "2026-05", done: true, descZh: "第一版竖切：地图、随机游走 NPC、只读适配器。", descEn: "First slice: map, random-walk NPCs, read-only adapters." },
   { zh: "v2 · Godot 重建（35 栋建筑）", en: "v2 · Godot rebuild (35 buildings)", date: "2026-05", done: true, descZh: "FastAPI 180+ 端点 + 真实数据适配器；绘本画风（后被推翻）。", descEn: "FastAPI 180+ endpoints + real adapters; storybook art (later replaced)." },
-  { zh: "v3 · 星露谷式 Web 重生", en: "v3 · Stardew-style web rebirth", date: "2026-06", done: true, descZh: "迁居 D:\\Company；真像素美术；浏览器即点即玩；agentmemory 修复加固。", descEn: "Moved to D:\\Company; true pixel art; instant browser play; agentmemory hardened." },
-  { zh: "下一步 · 室内场景与真实任务流", en: "Next · interiors & live task flows", date: "2026-Q3", done: false, descZh: "建筑室内地图、作物=任务的实时生长、agent 实时调度可视化。", descEn: "Interior maps, crops-as-tasks growing live, real-time agent dispatch view." },
+  { zh: "v3 · 星露谷式 Web 重生", en: "v3 · Stardew-style web rebirth", date: "2026-06", done: true, descZh: "迁居 D:\\Company；真像素美术；八位居民各有专属物种；浏览器即点即玩；agentmemory 修复加固。", descEn: "Moved to D:\\Company; true pixel art; eight residents with unique species; instant browser play; agentmemory hardened." },
+  { zh: "v4 · 室内与活水（下一个大版本）", en: "v4 · Interiors & Living Data (next)", date: "排队中", done: false, descZh: "六个以上可进入室内（书架长廊/锻造台/状态大厅）；作物=真实任务双向联动；NPC 日程与寻路；联机模式 LLM 对话；音效与存档。", descEn: "6+ enterable interiors (library stacks, forge, status hall); crops bound to real tasks both ways; NPC schedules & pathfinding; LLM dialogue in live mode; audio & save system." },
+  { zh: "v5 · 矿洞与季节（储备）", en: "v5 · Mines & Seasons (backlog)", date: "构想", done: false, descZh: "技术债矿洞逐层下挖、日志钓鱼、四季换装、发布日=丰收节、成就图鉴。", descEn: "Tech-debt mines, log fishing, four seasons, release-day festivals, achievements." },
 ];
 
 function Landing() {

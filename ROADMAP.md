@@ -1,86 +1,64 @@
-# AI Town Roadmap
+# 新路谷物语 Newroad Valley — 建设日志与路线图
 
-This roadmap tracks the move from a rough inherited project to a Godot-first open-source local work game.
+升级纪律（2026-06-11 确立）：**按大版本推进。做完一个大里程碑，立刻规划下一个；
+每次"升级"必须是成体系的版本跃迁（多个子系统、可感知的内容/玩法跨越），
+严禁 toy 式小迭代。** 用户说"升级" = 自动执行下一个排队中的大版本。
 
-## Phase 1: Godot Vertical Slice
+每个版本的完成标准：本地验证通过 → 构建零错 → Vercel 部署 → GitHub 推送 →
+本文件与落地页建设日志更新 → agentmemory 登记。
 
-- Godot project opens from `godot/project.godot`.
-- Player movement, camera, building hotspots, room overlay, NPC/agent selection, dialogue, quests, and badge persistence work.
-- FastAPI exposes real local adapters.
-- One-click local launch scripts work.
-- Smoke and visual capture scripts exist.
+---
 
-Status: in progress, playable foundation exists.
+## ✅ v1 · React/Phaser 原型（2026-05）
 
-## Phase 2: Real Workflow Buildings
+第一版竖切：地图、随机游走 NPC、只读适配器。
 
-Implemented or underway:
+## ✅ v2 · Godot 重建（2026-05）
 
-- File Vault
-- Memory Library
-- Research Hall
-- Agent Hub
-- Code Workshop
-- GitHub Harbor
-- Terminal Control
-- System Monitor
-- Model Market/API Gateway
-- Task Board
-- Writing Studio
-- Automation Factory
-- Permission Hall
-- Settings Center
-- Testing Arena
-- Bug Clinic
-- Project Management Hall
-- Download Station
-- Asset Resource Gallery
-- Local Office Center
-- Schedule and Plan Center
-- Learning Training Grounds
-- Language Learning Area
-- Research Data Center
-- Paper Reading Room
-- Version Release Plaza
-- Backup Station
-- Long-Term Goal Tower
-- Inspiration Collection Station
-- Temporary Draft Box
+35 栋建筑、FastAPI 180+ 端点、真实数据适配器；绘本画风（后被推翻）。
+完整保存在 git tag `v2-godot-era`。
 
-Next:
+## ✅ v3 · 星露谷式 Web 重生（2026-06）
 
-- Research log workbench with ARIS audit routing.
-- Richer code-task drafting and patch review.
-- GitHub issue/PR/release views behind safe gates.
-- Plugin registry for new local workspaces and agents.
+- 迁居 `D:\Company\newroad-valley`；GitHub 改名 `newroad-valley`；
+  上线 https://newroad-valley.vercel.app
+- 真 16px 像素美术管线（授权包 → 变体生成，合规分轨）
+- 程序化小镇：草地自动拼接、河流池塘、路网、农场、昼夜、广场装饰
+- 8 位居民各有专属物种（玩家按站长 GitHub 头像定制；新增 Fable 说书狐）
+- 10 栋工作建筑 = 10 个真实系统入口，联机/演示双数据模式
+- agentmemory 404 事故根治 + selfheal v2；任务队列重试/幂等加固
 
-## Phase 3: Architecture Hardening
+---
 
-- Split monolithic `backend/main.py` into API modules, adapters, permissions, jobs, config, and logs.
-- Split monolithic `godot/scripts/main.gd` into API client, world, UI, quests, rooms, and data modules.
-- Move quests and workflow definitions into registries.
-- Add schema validation for registries. Initial read-only registry health now validates nine Godot JSON registries through `/api/config/registry-health`; richer typed schemas and CI integration remain future work.
-- Add persistent job log storage, pause/resume, cancellation, and rollback metadata. Initial backend job lifecycle logs now persist under `workspace/backend-job-logs`, and cancellation metadata plus rollback notes exist; true cooperative runner cancellation remains future hardening.
-- Add stronger tests for path allowlists, previews, and confirmation gates.
+## 🔜 v4 · 室内与活水 Interiors & Living Data（排队中，"升级"即开工）
 
-## Phase 4: Game Feel and Art Pass
+目标：从"能逛的镇子"跃迁为"能住、能干活的镇子"。世界获得纵深（室内），
+数据获得生命（任务实时生长），居民获得作息（日程与寻路）。
 
-- Replace overlay-only rooms with dedicated Godot room scenes. All thirty-five current core workflow buildings now have data-driven interiors and station hotspots; future work should deepen room-specific interactions and art polish rather than merely adding coverage.
-- Add richer map regions, portals, building interiors, NPC routines, and room-specific interactions.
-- Improve Q-character animation, feedback, tooltips, and collection progression.
-- Use `docs\VISUAL_BASELINE.md` as the long-term art contract.
-- Expand visual regression artifacts beyond the first smoke screenshot.
+1. **可进入的室内场景（≥6 个）** — Mystic Woods 室内资产已就位。
+   记忆图书馆书架长廊（书架=记忆类型，走近翻书）、技能工坊锻造台、
+   市政厅状态大屏厅、农舍卧室（床=存档）、温室内部、研究大厅看板墙。
+   门口淡入淡出转场，室内独立碰撞与深度。
+2. **作物=任务实时联动** — 农场与真实任务账本（workspace/tasks.json）双向绑定：
+   种植=创建任务、生长阶段=进度、浇水=推进、收获=完成写回；
+   演示模式跑模拟任务流。作物贴图用 LPC 50 种×5 阶段。
+3. **NPC 日程系统** — 居民按钟表作息：清晨各回工作建筑、午间广场聚集、
+   夜晚回 agent 旅店；A* 寻路 + 门进出；对话时报告"现在在做什么"。
+4. **LLM 对话（联机模式）** — 本地桥转发到模型网关，按 agent 身份 persona
+   流式回答；演示模式保留手写台词。
+5. **声音** — BGM（CC0 chiptune）+ 脚步/开门/翻书/收获音效，可静音。
+6. **存档** — 玩家位置、已读记忆、收获统计 localStorage 持久化；床=手动存档点。
 
-## Phase 5: Real Agent Operations
+## 🗃 v5 · 矿洞与季节 Mines & Seasons（构想储备）
 
-- Connect agent runners through queued, observable jobs.
-- Add model routing, tool-call logs, context memory, and failure recovery.
-- Add agent task states, streaming logs, retries, and user confirmation gates.
-- Keep destructive or external writes separate from ordinary read/draft workflows.
+- 矿洞=技术债与日志矿脉：逐层下挖（深度=git 历史/日志层），挖出"矿石"=
+  待办债务卡片；钓鱼=日志检索小游戏
+- 四季视觉轮换（树木/地表换装）+ 节日事件（版本发布日=丰收节）
+- 成就与图鉴系统（收集真实里程碑徽章）
+- 小镇升级机制：完成真实任务积累"建设点"，解锁建筑外观升级
 
-## Phase 6: Open-Source Release
+## 🗃 v6 · 远行与同行 Mobile & Multiplayer-lite（构想储备）
 
-- Keep README, LICENSE, CONTRIBUTING, SECURITY, ROADMAP, architecture docs, and screenshots current.
-- Add a clean release checklist and changelog flow.
-- Prepare GitHub Actions or local CI once the repo is modular enough.
-- Stage, commit, push, and publish only after explicit user approval.
+- 移动端触控适配 + PWA 离线
+- 观战模式：只读分享链接，朋友可逛你的小镇（永远演示数据）
+- 实时 agent 调度可视化：agent 接任务时，对应 NPC 跑向公告板取单
