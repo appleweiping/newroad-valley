@@ -571,6 +571,65 @@ def festival() -> dict:
     return {"latest": None, "today": False}
 
 
+_CHRONICLE_CACHE: dict = {"at": 0.0, "data": None}
+
+
+@router.get("/chronicle")
+def town_chronicle() -> dict:
+    """The town chronicle — Fable's book of real history: GitHub releases +
+    agentmemory milestones + the founding eras. Cached 10 min."""
+    now = time.time()
+    if _CHRONICLE_CACHE["data"] is not None and now - _CHRONICLE_CACHE["at"] < 600:
+        return _CHRONICLE_CACHE["data"]
+    entries: list[dict] = [
+        {"date": "2026-05-20", "kind": "era", "title": "v1 · React 原型时代",
+         "detail": "第一张地图与随机游走的居民。"},
+        {"date": "2026-05-28", "kind": "era", "title": "v2 · Godot 绘本时代",
+         "detail": "35 栋建筑的大镇子，后被推翻重来（tag v2-godot-era）。"},
+        {"date": "2026-06-11", "kind": "era", "title": "v3 · 星露谷式重生",
+         "detail": "迁居 D:\\Company，真像素美术管线落成，小镇换上新名字。"},
+    ]
+    try:
+        r = httpx.get(
+            "https://api.github.com/repos/appleweiping/newroad-valley/releases",
+            params={"per_page": "20"}, timeout=8.0,
+            headers={"Accept": "application/vnd.github+json"},
+        )
+        if r.status_code == 200:
+            for rel in r.json():
+                body = str(rel.get("body", "") or "")
+                first = next((ln.strip() for ln in body.splitlines() if ln.strip() and not ln.startswith("#")), "")
+                entries.append({
+                    "date": str(rel.get("published_at", ""))[:10],
+                    "kind": "release",
+                    "title": str(rel.get("name") or rel.get("tag_name", "")),
+                    "detail": first[:110],
+                })
+    except Exception:
+        pass
+    try:
+        r = httpx.get(
+            f"{AGENTMEMORY}/agentmemory/memories",
+            params={"project": "newroad-valley", "type": "milestone", "limit": "20"},
+            timeout=5.0,
+        )
+        if r.status_code == 200:
+            for m in r.json().get("memories", []):
+                content = str(m.get("content", ""))
+                entries.append({
+                    "date": str(m.get("createdAt", ""))[:10],
+                    "kind": "milestone",
+                    "title": content.split("。")[0][:60],
+                    "detail": content[:140],
+                })
+    except Exception:
+        pass
+    entries.sort(key=lambda e: e.get("date", ""), reverse=True)
+    data = {"entries": entries[:40]}
+    _CHRONICLE_CACHE.update(at=now, data=data)
+    return data
+
+
 @router.get("/signals")
 def town_signals(limit: int = 8) -> dict:
     """Recent multi-agent signals relayed from agentmemory (read-only).

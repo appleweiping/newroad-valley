@@ -4,6 +4,7 @@ import { INTERIORS, type InteriorDef } from "@/data/interiors";
 import { bus } from "@/shared/bus";
 import { audio } from "@/game/audio";
 import { touchState } from "@/shared/touch";
+import { loadSave } from "@/shared/save";
 
 const T = 16;
 
@@ -59,6 +60,7 @@ export class InteriorScene extends Phaser.Scene {
 
     this.buildRoom();
     this.buildFixtures();
+    if (def.id === "museum") this.buildMuseumExhibits();
     this.buildResidents();
 
     this.playerShadow = this.add
@@ -309,6 +311,41 @@ export class InteriorScene extends Phaser.Scene {
 
   private leaving = false;
   private touchInteract = false;
+
+  /** the museum renders the player's donations live on its pedestals */
+  private buildMuseumExhibits(): void {
+    const save = loadSave();
+    const ores = save?.museum?.ores ?? [];
+    const fish = save?.museum?.fish ?? [];
+    const pedestals: [number, number][] = [[2, 3], [5, 3], [9, 3], [12, 3], [2, 8], [12, 8]];
+    const KIND_TINT: Record<string, number> = {
+      todo: 0x9fd6ff, hack: 0xffd27a, fixme: 0xff9b9b, hotspot: 0xc99bff,
+    };
+    const exhibits = [
+      ...ores.map((o) => ({ kind: "ore" as const, label: o })),
+      ...fish.map((f) => ({ kind: "fish" as const, label: f })),
+    ].slice(0, pedestals.length);
+    exhibits.forEach((ex, i) => {
+      const [tx, ty] = pedestals[i];
+      const px = tx * T + 8;
+      const py = ty * T + 10;
+      if (ex.kind === "ore") {
+        const m = /^\[(\w+)\]/.exec(ex.label);
+        this.add.image(px, py, "prop-ore-node")
+          .setOrigin(0.5, 1).setScale(0.55)
+          .setTint(KIND_TINT[m?.[1] ?? ""] ?? 0x9fd6ff)
+          .setDepth(py + 1);
+      } else {
+        this.add.text(px, py - 8, "🐟", { fontSize: "10px", resolution: 3 })
+          .setOrigin(0.5, 1).setDepth(py + 1);
+      }
+    });
+    const total = ores.length + fish.length;
+    this.add.text(11 * T, 3 * T - 6, total > 0 ? `馆藏 ${total} 件` : "虚位以待", {
+      fontFamily: "'Microsoft YaHei', sans-serif", fontSize: "8px",
+      color: "#e8ddc8", stroke: "#3a3148", strokeThickness: 3, resolution: 3,
+    }).setOrigin(0.5, 1).setDepth(20000);
+  }
 
   private leave(): void {
     // update() hits the threshold every frame — without this guard the

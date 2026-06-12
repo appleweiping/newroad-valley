@@ -1,0 +1,13 @@
+{
+  "entries": [
+    { "date": "2026-06-12", "kind": "release", "title": "v9.0.0 — 打磨与开放（五连升收官 🌙）", "detail": "一夜五个大版本（v5→v9）的最后一站：新手引导、设置面板、README 改版。" },
+    { "date": "2026-06-12", "kind": "release", "title": "v8.0.0 — 玩法纵深 Inventory & Economy", "detail": "背包、出货箱、山谷手册、商店、体力、博物馆捐赠。" },
+    { "date": "2026-06-12", "kind": "release", "title": "v7.0.0 — 活水加深 Living Integrations", "detail": "记忆冒烟、提交开花、天气、闲聊、对话接单。" },
+    { "date": "2026-06-12", "kind": "release", "title": "v6.0.0 — 远行与同行 Mobile & Spectate", "detail": "触控摇杆、PWA、观战链接、信号实时可视化。" },
+    { "date": "2026-06-12", "kind": "release", "title": "v5.0.0 — 矿洞与季节 Mines & Seasons", "detail": "技术债矿洞、日志钓鱼、四季、丰收节、成就年鉴。" },
+    { "date": "2026-06-11", "kind": "milestone", "title": "v4.1 出门难与穿墙修复", "detail": "门洞加宽、防角穿透、卡住看门狗、点击寻路——居民们终于不再撞墙了。" },
+    { "date": "2026-06-11", "kind": "era", "title": "v3 · 星露谷式重生", "detail": "迁居新家，真像素美术管线落成，小镇换上新名字 Newroad Valley。" },
+    { "date": "2026-05-28", "kind": "era", "title": "v2 · Godot 绘本时代", "detail": "35 栋建筑的大镇子，后被推翻重来（tag v2-godot-era）。" },
+    { "date": "2026-05-20", "kind": "era", "title": "v1 · React 原型时代", "detail": "第一张地图与随机游走的居民。" }
+  ]
+}

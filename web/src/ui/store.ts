@@ -7,6 +7,7 @@ interface UIState {
   live: boolean;
   dialogueAgent: string | null;
   dialogueActivity: { zh: string; en: string } | null;
+  dialogueHearts: number;
   openPanel: string | null; // building id
   plantCell: number | null; // farm cell awaiting a task title
   toast: string | null;
@@ -18,7 +19,7 @@ interface UIState {
   clock: { day: number; hour: number; minute: number; season: string; weather?: string };
   setLang(l: Lang): void;
   setLive(v: boolean): void;
-  openDialogue(agentId: string, activity?: { zh: string; en: string } | null): void;
+  openDialogue(agentId: string, activity?: { zh: string; en: string } | null, hearts?: number): void;
   closeDialogue(): void;
   openBuilding(buildingId: string): void;
   closePanel(): void;
@@ -37,6 +38,7 @@ export const useUI = create<UIState>((set) => ({
   live: false,
   dialogueAgent: null,
   dialogueActivity: null,
+  dialogueHearts: 0,
   openPanel: null,
   plantCell: null,
   toast: null,
@@ -48,7 +50,7 @@ export const useUI = create<UIState>((set) => ({
   clock: { day: 1, hour: 8, minute: 0, season: "春" },
   setLang: (lang) => set({ lang }),
   setLive: (live) => set({ live }),
-  openDialogue: (dialogueAgent, dialogueActivity = null) => set({ dialogueAgent, dialogueActivity }),
+  openDialogue: (dialogueAgent, dialogueActivity = null, dialogueHearts = 0) => set({ dialogueAgent, dialogueActivity, dialogueHearts }),
   closeDialogue: () => set({ dialogueAgent: null, dialogueActivity: null }),
   openBuilding: (openPanel) => set({ openPanel }),
   closePanel: () => set({ openPanel: null }),

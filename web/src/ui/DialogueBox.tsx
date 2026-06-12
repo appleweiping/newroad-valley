@@ -11,7 +11,7 @@ import { useUI } from "./store";
  * the local bridge, which answers as the agent (LLM if a key is configured,
  * data-grounded persona templates otherwise). */
 export function DialogueBox() {
-  const { dialogueAgent, dialogueActivity, closeDialogue, lang, live } = useUI();
+  const { dialogueAgent, dialogueActivity, dialogueHearts, closeDialogue, lang, live } = useUI();
   const agent = useMemo(() => AGENTS.find((a) => a.id === dialogueAgent) ?? null, [dialogueAgent]);
   const [lineIdx, setLineIdx] = useState(0);
   const [shown, setShown] = useState(0);
@@ -26,8 +26,15 @@ export function DialogueBox() {
     if (!agent) return [] as string[];
     const scripted = agent.lines.map((l) => l[lang]);
     const act = dialogueActivity ? [lang === "zh" ? `（${dialogueActivity.zh}）` : `(${dialogueActivity.en})`] : [];
-    return [...act, ...scripted, ...extraLines];
-  }, [agent, lang, dialogueActivity, extraLines]);
+    // friendship flavor: warmer openers as hearts grow
+    const greeting =
+      dialogueHearts >= 7
+        ? [lang === "zh" ? "有你在，山谷的日子格外好。" : "The valley feels brighter with you around."]
+        : dialogueHearts >= 3
+          ? [lang === "zh" ? "很高兴又见到你！" : "Good to see you again!"]
+          : [];
+    return [...greeting, ...act, ...scripted, ...extraLines];
+  }, [agent, lang, dialogueActivity, dialogueHearts, extraLines]);
 
   const line = lines[Math.min(lineIdx, lines.length - 1)] ?? "";
 
@@ -121,6 +128,10 @@ export function DialogueBox() {
               {lang === "zh" ? agent.nameZh : agent.nameEn}
               <span className="pixel-chip" style={{ marginLeft: 8, color: agent.color, borderColor: agent.color }}>
                 {lang === "zh" ? agent.roleZh : agent.role}
+              </span>
+              <span style={{ marginLeft: 8, fontSize: 12, color: "#c95b5b" }} title={lang === "zh" ? `好感度 ${dialogueHearts}/10` : `friendship ${dialogueHearts}/10`}>
+                {"♥".repeat(Math.min(5, Math.max(0, Math.ceil(dialogueHearts / 2))))}
+                <span style={{ opacity: 0.35 }}>{"♥".repeat(5 - Math.min(5, Math.max(0, Math.ceil(dialogueHearts / 2))))}</span>
               </span>
             </strong>
             <span style={{ fontSize: 11, opacity: 0.85, display: "flex", gap: 8, alignItems: "center" }} onClick={(e) => e.stopPropagation()}>

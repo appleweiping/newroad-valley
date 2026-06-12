@@ -107,6 +107,14 @@ export const BUILDINGS: BuildingDef[] = [
     descEn: "Greenhouse of the task farm: every crop is a task in progress.",
     sources: ["workspace/tasks.json"],
   },
+  {
+    id: "museum", texture: "bld-cute-house",
+    nameZh: "镇立博物馆", nameEn: "Town Museum",
+    tx: 24, ty: 28, panel: "museum",
+    descZh: "你捐赠的技术债矿石与日志鱼在这里上墙展出。",
+    descEn: "Your donated debt ore and log fish hang on these walls.",
+    sources: ["local save (donations)"],
+  },
 ];
 
 export interface AgentDef {

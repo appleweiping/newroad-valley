@@ -3,6 +3,7 @@ import { bus } from "@/shared/bus";
 import { BUILDINGS } from "@/data/town";
 import { audio } from "@/game/audio";
 import { loadSave } from "@/shared/save";
+import { getData } from "@/shared/api";
 import { SPECTATE } from "@/shared/flags";
 import { useUI } from "./store";
 import { DialogueBox } from "./DialogueBox";
@@ -170,9 +171,18 @@ function FishingBar() {
 /** The Valley Handbook: bag / shipping / shop / museum / achievements / almanac.
  * Reads the save fresh each render; actions go through the bus to the scene,
  * and a local nonce re-renders after each mutation. */
+interface ChronicleEntry { date: string; kind: string; title: string; detail: string }
+
 function Almanac() {
   const { almanac, setAlmanac, almanacTab, setAlmanacTab, lang } = useUI();
   const [, setNonce] = useState(0);
+  const [chronicle, setChronicle] = useState<ChronicleEntry[] | null>(null);
+  useEffect(() => {
+    if (!almanac || almanacTab !== "chronicle" || chronicle) return;
+    getData<{ entries: ChronicleEntry[] }>("/api/town/chronicle", "chronicle.json")
+      .then((d) => setChronicle(d.entries ?? []))
+      .catch(() => setChronicle([]));
+  }, [almanac, almanacTab, chronicle]);
   if (!almanac) return null;
   const tab = almanacTab;
   const setTab = setAlmanacTab;
@@ -210,7 +220,7 @@ function Almanac() {
           <button className="wood-btn" onClick={close}>✕</button>
         </div>
         <div style={{ display: "flex", gap: 5, padding: "10px 14px 0", flexWrap: "wrap" }}>
-          {([["bag", "🎒 背包"], ["ship", "📦 出货"], ["shop", "🛒 商店"], ["museum", "🏛 博物馆"], ["ach", "🏆 成就"], ["ore", "⛏ 矿石"], ["fish", "🎣 鱼"]] as const).map(([k, label]) => (
+          {([["bag", "🎒 背包"], ["ship", "📦 出货"], ["shop", "🛒 商店"], ["museum", "🏛 博物馆"], ["chronicle", "📜 镇志"], ["ach", "🏆 成就"], ["ore", "⛏ 矿石"], ["fish", "🎣 鱼"]] as const).map(([k, label]) => (
             <button key={k} className="wood-btn" style={{ fontSize: 11.5, opacity: tab === k ? 1 : 0.6 }} onClick={() => setTab(k)}>
               {label}
             </button>
@@ -294,6 +304,24 @@ function Almanac() {
                   <button className="wood-btn" style={{ fontSize: 11 }} onClick={() => { bus.emit("museum:donate", { kind: "fish", index: i }); setTimeout(bump, 80); }}>
                     {lang === "zh" ? "捐赠" : "Donate"}
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === "chronicle" && (
+            <div>
+              <p style={{ fontSize: 12.5, opacity: 0.75, marginTop: 0 }}>
+                {lang === "zh" ? "Fable 笔下的小镇编年史——每一行都来自真实的发布与里程碑。" : "Fable's town chronicle — every line is a real release or milestone."}
+              </p>
+              {chronicle === null && <p style={{ opacity: 0.6 }}>{lang === "zh" ? "翻书中……" : "Turning pages…"}</p>}
+              {chronicle?.length === 0 && <p style={{ opacity: 0.6 }}>{lang === "zh" ? "镇志暂时翻不开。" : "The chronicle won't open right now."}</p>}
+              {(chronicle ?? []).map((e, i) => (
+                <div key={i} className="book-card">
+                  <h4>
+                    {e.kind === "release" ? "🚀" : e.kind === "milestone" ? "⭐" : "🏛"} {e.title}
+                    <span style={{ fontWeight: 400, fontSize: 11, opacity: 0.6, marginLeft: 8 }}>{e.date}</span>
+                  </h4>
+                  {e.detail && <p style={{ margin: "4px 0 0", fontSize: 12, opacity: 0.8 }}>{e.detail}</p>}
                 </div>
               ))}
             </div>
@@ -428,10 +456,21 @@ export function GameUI() {
   useEffect(() => {
     let toastTimer: number | undefined;
     const offs = [
-      bus.on("npc:talk", ({ agentId, activityZh, activityEn }) =>
-        openDialogue(agentId, activityZh ? { zh: activityZh, en: activityEn ?? activityZh } : null)),
+      bus.on("npc:talk", ({ agentId, activityZh, activityEn, hearts }) =>
+        // interior scenes emit without hearts — fall back to the save
+        openDialogue(
+          agentId,
+          activityZh ? { zh: activityZh, en: activityEn ?? activityZh } : null,
+          hearts ?? loadSave()?.hearts?.[agentId] ?? 0,
+        )),
       bus.on("building:enter", ({ buildingId }) => openBuilding(buildingId)),
       bus.on("building:enter-panel", ({ panel }) => {
+        if (panel === "museum") {
+          // the museum desk opens the handbook's museum page
+          setAlmanacTab("museum");
+          setAlmanac(true);
+          return;
+        }
         const b = BUILDINGS.find((bb) => bb.panel === panel);
         if (b) openBuilding(b.id);
       }),

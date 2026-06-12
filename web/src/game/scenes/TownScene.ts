@@ -154,6 +154,9 @@ export class TownScene extends Phaser.Scene {
   private bubbles: Phaser.GameObjects.Text[] = [];
   // ---- v9 state
   private tutorialStep = 1; // 1..5, 99 = done
+  // ---- v10 state
+  private hearts: Record<string, number> = {};
+  private heartsDay: Record<string, number> = {};
 
   constructor() {
     super("town");
@@ -179,6 +182,8 @@ export class TownScene extends Phaser.Scene {
       this.museum = save.museum ?? { ores: [], fish: [] };
       this.decor = save.decor ?? [];
       this.tutorialStep = save.tutorialStep ?? 1;
+      this.hearts = save.hearts ?? {};
+      this.heartsDay = save.heartsDay ?? {};
     }
 
     this.buildGround();
@@ -611,6 +616,28 @@ export class TownScene extends Phaser.Scene {
     });
   }
 
+  // -------------------------------------------------------------- v10 hearts
+  /** Friendship: first chat each day +1, quests +1, quest harvests +2.
+   * Exposed for the harness. */
+  bumpHearts(agentId: string, kind: "talk" | "quest" | "harvest"): void {
+    if (!AGENTS.some((a) => a.id === agentId)) return;
+    if (kind === "talk") {
+      if (this.heartsDay[agentId] === this.day) return; // one credit per day
+      this.heartsDay[agentId] = this.day;
+    }
+    const gain = kind === "harvest" ? 2 : 1;
+    const before = this.hearts[agentId] ?? 0;
+    const after = Math.min(10, before + gain);
+    if (after === before) return;
+    this.hearts[agentId] = after;
+    const name = AGENTS.find((a) => a.id === agentId)?.nameZh ?? agentId;
+    if (after >= 3 && before < 3) bus.emit("toast", { text: `♥ 你和${name}成了朋友（好感 ${after}/10）` });
+    else if (after >= 7 && before < 7) bus.emit("toast", { text: `♥♥ ${name}已把你当作挚友（好感 ${after}/10）` });
+    else if (after >= 10 && before < 10) bus.emit("toast", { text: `💖 你和${name}的友谊满格了！` });
+    if (after >= 5) this.grantAch("heart5", "镇上有了好朋友（好感 ≥5）");
+    this.autosave();
+  }
+
   // ------------------------------------------------------------ v9 tutorial
   private static readonly TUTORIAL_STEPS: Record<number, [string, string]> = {
     1: ["去广场公告板旁找狐狸 Fable 聊聊", "Find Fable the fox by the notice board"],
@@ -914,9 +941,10 @@ export class TownScene extends Phaser.Scene {
     flower: { name: "南广场花坛（一座）", cost: 6 },
   };
 
+  // open ground flanking the plaza — clear of the market's collision box
   private static readonly DECOR_SPOTS: Record<string, [number, number][]> = {
-    lamp: [[31, 23], [33, 23], [31, 25], [33, 25]],
-    flower: [[30, 22], [34, 22], [32, 26], [30, 26]],
+    lamp: [[25, 22], [39, 22], [25, 19], [39, 19]],
+    flower: [[26, 22], [38, 22], [26, 19], [38, 19]],
   };
 
   buyShopItem(itemId: string): void {
@@ -1028,6 +1056,7 @@ export class TownScene extends Phaser.Scene {
       return;
     }
     await this.plantCrop(cell, title);
+    this.bumpHearts(agentId, "quest");
     bus.emit("toast", { text: `🌱 已接下委托：${title.slice(0, 42)}` });
   }
 
@@ -1078,7 +1107,8 @@ export class TownScene extends Phaser.Scene {
       duty.kind === "inn" ? "about to head back to the inn" :
       duty.kind === "building" ? `on duty at the ${BUILDINGS.find((b) => b.id === duty.id)?.nameEn ?? "town"}` :
       "out and about";
-    bus.emit("npc:talk", { agentId, activityZh, activityEn });
+    bus.emit("npc:talk", { agentId, activityZh, activityEn, hearts: this.hearts[agentId] ?? 0 });
+    this.bumpHearts(agentId, "talk");
     if (agentId === "fable") this.tutorialHook("talk-fable");
   }
 
@@ -1231,6 +1261,8 @@ export class TownScene extends Phaser.Scene {
     this.removeCrop(crop.cell);
     this.harvested += 1;
     this.inventory.push({ kind: "crop", name: crop.title, variety: crop.variety });
+    const questOwner = /^([a-z]+) 委托：/.exec(crop.title)?.[1];
+    if (questOwner) this.bumpHearts(questOwner, "harvest");
     audio.harvest();
     bus.emit("toast", { text: `收获入包：${crop.title} ✅（累计 ${this.harvested}）` });
     this.autosave();
@@ -1258,6 +1290,8 @@ export class TownScene extends Phaser.Scene {
       museum: this.museum,
       decor: this.decor,
       tutorialStep: this.tutorialStep,
+      hearts: this.hearts,
+      heartsDay: this.heartsDay,
     });
   }
 
@@ -1573,6 +1607,13 @@ export class TownScene extends Phaser.Scene {
         this.uiLock = true;
         audio.click();
         bus.emit("almanac:tab", { tab: "ship" });
+        return;
+      }
+      // 2.6) plaza notice board -> the town chronicle
+      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, 29 * TILE + 8, 18 * TILE + 8) < TILE * 1.8) {
+        this.uiLock = true;
+        audio.page();
+        bus.emit("almanac:tab", { tab: "chronicle" });
         return;
       }
       // 3) fishing at the water's edge

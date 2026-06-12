@@ -1,7 +1,7 @@
 /** Tiny typed event bus bridging Phaser (game world) and React (UI layer). */
 
 export type BusEvents = {
-  "npc:talk": { agentId: string; activityZh?: string; activityEn?: string };
+  "npc:talk": { agentId: string; activityZh?: string; activityEn?: string; hearts?: number };
   "building:enter": { buildingId: string };
   "building:enter-panel": { panel: string };
   "building:hover": { buildingId: string | null };

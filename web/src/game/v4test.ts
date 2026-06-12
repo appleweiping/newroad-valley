@@ -366,6 +366,36 @@ export async function maybeRunV4Test(): Promise<void> {
   bus.emit("settings:zoom", { zoom: 3 });
   audioMod.setVolume(1);
 
+  // --- v10: the museum renders donations on its pedestals -----------------------
+  (t as unknown as { enterBuilding(id: string): void }).enterBuilding("museum");
+  await sleep(2600);
+  const museumScene = game5.scene.getScene("interior") as
+    | (Phaser.Scene & { leave?: () => void; def?: { id: string } })
+    | null;
+  await report("museum-interior", {
+    active: !!museumScene?.scene.isActive(),
+    room: museumScene?.def?.id ?? "?",
+    ok: !!museumScene?.scene.isActive() && museumScene?.def?.id === "museum",
+  }, true);
+  museumScene?.leave?.();
+  await sleep(2400);
+
+  // --- v10: the chronicle aggregates real history --------------------------------
+  let chron: { entries?: unknown[] } = {};
+  try { chron = await (await fetch(`${BASE}/api/town/chronicle`)).json(); } catch { /* bridge down */ }
+  if (!chron.entries) {
+    try { chron = await (await fetch("/demo/chronicle.json")).json(); } catch { /* no demo either */ }
+  }
+  await report("chronicle", { entries: chron.entries?.length ?? 0, ok: (chron.entries?.length ?? 0) >= 5 });
+
+  // --- v10: hearts grow with talks and quests -------------------------------------
+  const tH = t as unknown as { bumpHearts(id: string, k: string): void };
+  tH.bumpHearts("sonnet", "talk");
+  tH.bumpHearts("sonnet", "harvest");
+  await sleep(400);
+  const save10 = JSON.parse(localStorage.getItem("nrv-save-v1") ?? "{}") as { hearts?: Record<string, number> };
+  await report("hearts", { sonnet: save10.hearts?.sonnet ?? 0, ok: (save10.hearts?.sonnet ?? 0) >= 3 });
+
   // --- dialogue bridge ------------------------------------------------------
   let reply = "";
   try {

@@ -48,6 +48,10 @@ export interface SaveData {
   decor: { id: string; tx: number; ty: number }[];
   /** v9: onboarding progress (1..5, 99 = done) */
   tutorialStep: number;
+  /** v10: friendship hearts per resident (0..10) */
+  hearts: Record<string, number>;
+  /** v10: last game-day a talk credited hearts, per resident */
+  heartsDay: Record<string, number>;
 }
 
 const KEY = "nrv-save-v1";
@@ -64,6 +68,8 @@ const DEFAULTS = {
   museum: { ores: [] as string[], fish: [] as string[] },
   decor: [] as { id: string; tx: number; ty: number }[],
   tutorialStep: 1,
+  hearts: {} as Record<string, number>,
+  heartsDay: {} as Record<string, number>,
 };
 
 export function loadSave(): SaveData | null {

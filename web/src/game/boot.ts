@@ -12,6 +12,10 @@ import { GameUI } from "@/ui/GameUI";
 window.addEventListener("error", (e) => {
   (window as unknown as Record<string, unknown>).__lastError = `${e.message} @ ${e.filename}:${e.lineno}`;
 });
+// async deaths (e.g. inside the e2e harness) are otherwise invisible
+window.addEventListener("unhandledrejection", (e) => {
+  (window as unknown as Record<string, unknown>).__lastRejection = String(e.reason);
+});
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

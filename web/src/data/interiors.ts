@@ -154,6 +154,30 @@ export const INTERIORS: InteriorDef[] = [
     ],
     stations: { aris: { tx: 4, ty: 5 } },
   },
+  {
+    id: "museum",
+    buildingId: "museum",
+    nameZh: "镇立博物馆 · 展厅",
+    nameEn: "Town Museum · Exhibit Hall",
+    w: 15, h: 11, warmWalls: false, exitX: 7,
+    fixtures: [
+      // reception desk — donations happen here
+      { key: F, frame: 24, tx: 7, ty: 6, interact: { panel: "museum", labelZh: "捐赠与馆藏目录", labelEn: "Donate & browse the catalog" } },
+      { key: F, frame: 22, tx: 6, ty: 6, solid: false },
+      // pedestal rows along the walls — exhibits render on top (dynamic)
+      { key: F, frame: 25, tx: 2, ty: 3 },
+      { key: F, frame: 25, tx: 5, ty: 3 },
+      { key: F, frame: 25, tx: 9, ty: 3 },
+      { key: F, frame: 25, tx: 12, ty: 3 },
+      { key: F, frame: 25, tx: 2, ty: 8 },
+      { key: F, frame: 25, tx: 12, ty: 8 },
+      { key: F, frame: 48, tx: 7, ty: 5, flat: true, solid: false }, // wide rug
+      { key: F, frame: 12, tx: 1, ty: 6 },
+      { key: F, frame: 13, tx: 13, ty: 6 },
+      { key: F, frame: 33, tx: 7, ty: 3, solid: false }, // clock
+    ],
+    stations: {},
+  },
 ];
 
 export const INTERIOR_BY_BUILDING = new Map(INTERIORS.map((i) => [i.buildingId, i]));
