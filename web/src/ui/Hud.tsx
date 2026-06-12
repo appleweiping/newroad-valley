@@ -3,7 +3,7 @@ import { audio } from "@/game/audio";
 import { useUI } from "./store";
 
 export function Hud() {
-  const { clock, live, lang, setLang } = useUI();
+  const { clock, live, lang, setLang, setAlmanac } = useUI();
   const [muted, setMuted] = useState(audio.muted);
   const toggleMute = () => {
     const m = !muted;
@@ -38,6 +38,10 @@ export function Hud() {
           <button className="wood-btn" style={{ fontSize: 11, padding: "1px 8px" }} onClick={toggleMute}
             title={muted ? "开启声音" : "静音"}>
             {muted ? "🔇" : "🔊"}
+          </button>
+          <button className="wood-btn" style={{ fontSize: 11, padding: "1px 8px" }}
+            onClick={() => setAlmanac(true)} title="山谷图鉴">
+            📖
           </button>
         </div>
       </div>

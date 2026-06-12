@@ -7,6 +7,7 @@
  * Dev/owner tool: it only ever talks to 127.0.0.1.
  */
 import type Phaser from "phaser";
+import { bus } from "@/shared/bus";
 
 const BASE = "http://127.0.0.1:8000";
 
@@ -150,6 +151,57 @@ export async function maybeRunV4Test(): Promise<void> {
   if (mature) await (t as unknown as { harvestCrop(c: unknown): Promise<void> }).harvestCrop(mature);
   await sleep(1200);
   await report("farm-harvest", { remaining: snap(t, cell) }, true);
+
+  // --- v5: the tech-debt mines ----------------------------------------------
+  (t as unknown as { enterMine(): void }).enterMine();
+  await sleep(4200);
+  const game5 = (window as unknown as { __game: Phaser.Game }).__game;
+  const mine = game5.scene.getScene("mine") as
+    | (Phaser.Scene & {
+        nodes?: { collected: boolean; ore: { title: string } }[];
+        hitNode?: (n: unknown) => void;
+        leave?: () => void;
+      })
+    | null;
+  // ore arrives async (bridge /debt may be mid-scan) — wait for the real outcome
+  for (let i = 0; i < 24 && (mine?.nodes?.length ?? 0) === 0; i++) await sleep(500);
+  await report("mine-enter", {
+    active: !!mine?.scene.isActive(),
+    nodes: mine?.nodes?.length ?? 0,
+  }, true);
+  const node = mine?.nodes?.[0];
+  if (mine?.hitNode && node) {
+    mine.hitNode(node);
+    mine.hitNode(node);
+    mine.hitNode(node);
+  }
+  await sleep(1200);
+  const saveAfterDig = JSON.parse(localStorage.getItem("nrv-save-v1") ?? "{}") as { ores?: string[] };
+  await report("mine-dig", {
+    collected: node?.collected ?? false,
+    oreTitle: node?.ore.title ?? null,
+    oresInSave: saveAfterDig.ores?.length ?? 0,
+  }, true);
+  mine?.leave?.();
+  await sleep(2600);
+  await report("mine-exit", { townActive: t.scene.isActive() });
+
+  // --- v5: fishing (resolve through the result channel) ----------------------
+  bus.emit("fishing:result", { quality: 2 });
+  await sleep(1600);
+  const saveAfterFish = JSON.parse(localStorage.getItem("nrv-save-v1") ?? "{}") as { fish?: string[]; ach?: Record<string, boolean> };
+  await report("fish-catch", {
+    fishInSave: saveAfterFish.fish?.length ?? 0,
+    lastFish: saveAfterFish.fish?.slice(-1)[0] ?? null,
+    achievements: Object.keys(saveAfterFish.ach ?? {}),
+  });
+
+  // --- v5: season change ------------------------------------------------------
+  (t as unknown as { day: number }).day = 8; // week 2 = summer
+  await sleep(1500);
+  await report("season", {
+    season: (t as unknown as { currentSeason: string }).currentSeason,
+  }, true);
 
   // --- dialogue bridge ------------------------------------------------------
   let reply = "";

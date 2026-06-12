@@ -15,6 +15,12 @@ export type BusEvents = {
   "sleep:done": { day: number };
   "farm:plant-request": { cell: number };
   "farm:plant-confirm": { cell: number; title: string };
+  "ore:collected": { title: string; kind: string; repo: string; file: string };
+  "fishing:start": undefined;
+  "fishing:result": { quality: number };
+  "fish:caught": { text: string; level: string };
+  "almanac:open": undefined;
+  "ach:unlocked": { name: string };
 };
 
 type Handler<T> = (payload: T) => void;

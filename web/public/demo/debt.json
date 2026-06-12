@@ -1,0 +1,16 @@
+{
+  "ores": [
+    { "id": "d1", "kind": "todo", "title": "把硬编码的端口移到配置里", "file": "src/server.ts", "repo": "demo-app", "depth": 1 },
+    { "id": "d2", "kind": "todo", "title": "给空状态补一个插画", "file": "src/ui/Empty.tsx", "repo": "demo-app", "depth": 1 },
+    { "id": "d3", "kind": "fixme", "title": "竞态：双击会提交两次表单", "file": "src/form.ts", "repo": "demo-app", "depth": 3 },
+    { "id": "d4", "kind": "hack", "title": "临时绕过缓存失效（记得回来）", "file": "lib/cache.py", "repo": "demo-api", "depth": 2 },
+    { "id": "d5", "kind": "todo", "title": "迁移到新的日志格式", "file": "worker/log.py", "repo": "demo-api", "depth": 1 },
+    { "id": "d6", "kind": "fixme", "title": "断网重连后丢失订阅", "file": "ws/client.ts", "repo": "demo-app", "depth": 3 },
+    { "id": "d7", "kind": "hotspot", "title": "高频改动 14 次：router.ts", "file": "src/router.ts", "repo": "demo-app", "depth": 2 },
+    { "id": "d8", "kind": "todo", "title": "补三个边界用例的测试", "file": "tests/edge.spec.ts", "repo": "demo-app", "depth": 1 },
+    { "id": "d9", "kind": "hack", "title": "魔法数字 86400 散落四处", "file": "lib/time.py", "repo": "demo-api", "depth": 2 },
+    { "id": "d10", "kind": "fixme", "title": "深层依赖有一个废弃 API 警告", "file": "package.json", "repo": "demo-app", "depth": 3 },
+    { "id": "d11", "kind": "todo", "title": "README 安装一节过期了", "file": "README.md", "repo": "demo-api", "depth": 1 },
+    { "id": "d12", "kind": "hotspot", "title": "高频改动 9 次：main.py", "file": "main.py", "repo": "demo-api", "depth": 2 }
+  ]
+}

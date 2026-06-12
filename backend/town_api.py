@@ -413,6 +413,164 @@ def _grounded_reply(agent_id: str, message: str) -> str:
     return "（点点头）这事记下了。回头到对应的建筑里看看吧。"
 
 
+# ----------------------------------------------------------------- v5: mines
+DEBT_EXCLUDE = {"node_modules", "dist", ".git", "art", "workspace", ".vite", "__pycache__", "packs"}
+DEBT_EXTS = {".py", ".ts", ".tsx", ".js", ".mjs", ".ps1", ".md", ".gd"}
+
+
+_DEBT_CACHE: dict = {"at": 0.0, "data": None}
+
+
+def _scan_debt() -> dict:
+    """The actual repo walk (seconds when cold). Kept off the request path
+    whenever any cached copy exists — see debt_ores below."""
+    import os
+
+    ores: list[dict] = []
+    deadline = time.time() + 5.0  # hard budget — this is a game endpoint
+    if COMPANY_ROOT.exists():
+        for repo in sorted(COMPANY_ROOT.iterdir()):
+            if not (repo / ".git").exists() or len(ores) >= 40 or time.time() > deadline:
+                continue
+            count = 0
+            scanned = 0
+            for root, dirs, files in os.walk(repo):
+                # prune in place so we never descend into node_modules etc.
+                dirs[:] = [d for d in dirs if d not in DEBT_EXCLUDE and not d.startswith(".")]
+                if count >= 8 or scanned >= 400 or time.time() > deadline:
+                    break
+                for fname in files:
+                    if count >= 8 or scanned >= 400 or time.time() > deadline:
+                        break
+                    f = Path(root) / fname
+                    if f.suffix.lower() not in DEBT_EXTS:
+                        continue
+                    scanned += 1
+                    try:
+                        if f.stat().st_size > 300_000:
+                            continue
+                        text = f.read_text(encoding="utf-8", errors="ignore")
+                    except Exception:
+                        continue
+                    for m in re.finditer(r"(?:#|//|<!--)\s*(TODO|FIXME|HACK)[:\s](.{4,90})", text):
+                        kind = m.group(1).lower()
+                        ores.append({
+                            "id": f"{repo.name}-{len(ores)}",
+                            "kind": kind,
+                            "title": m.group(2).strip().rstrip("-->").strip()[:80],
+                            "file": str(f.relative_to(repo))[:60],
+                            "repo": repo.name,
+                            "depth": {"todo": 1, "hack": 2, "fixme": 3}.get(kind, 1),
+                        })
+                        count += 1
+                        if count >= 8:
+                            break
+            # git hotspots: most-touched files of the last 30 days
+            if time.time() > deadline:
+                continue
+            try:
+                out = subprocess.run(
+                    ["git", "-C", str(repo), "log", "--since=30.days", "--name-only", "--format="],
+                    capture_output=True, text=True, timeout=4,
+                ).stdout.splitlines()
+                from collections import Counter
+
+                hot = Counter(x for x in out if x.strip())
+                for fname, n in hot.most_common(4):
+                    if n >= 3:
+                        ores.append({
+                            "id": f"{repo.name}-hot-{len(ores)}",
+                            "kind": "hotspot",
+                            "title": f"高频改动 {n} 次：{Path(fname).name}",
+                            "file": fname[:60],
+                            "repo": repo.name,
+                            "depth": 2,
+                        })
+            except Exception:
+                pass
+    return {"ores": ores}
+
+
+def _refresh_debt() -> None:
+    try:
+        _DEBT_CACHE.update(at=time.time(), data=_scan_debt())
+    finally:
+        _DEBT_CACHE["busy"] = False
+
+
+@router.get("/debt")
+def debt_ores() -> dict:
+    """Tech debt as minable ore: TODO/FIXME comments + git hotspot files
+    across the company repos. Read-only; paths trimmed to repo-relative.
+    Stale-while-revalidate: a request never waits on a re-scan — any cached
+    copy serves instantly while a daemon thread refreshes past the 10-min TTL.
+    (The mine spawns nodes from this; a 7s wall here read as an empty cave.)"""
+    import threading
+
+    now = time.time()
+    if _DEBT_CACHE["data"] is not None:
+        if now - _DEBT_CACHE["at"] > 600 and not _DEBT_CACHE.get("busy"):
+            _DEBT_CACHE["busy"] = True
+            threading.Thread(target=_refresh_debt, daemon=True).start()
+        return _DEBT_CACHE["data"]
+    data = _scan_debt()
+    _DEBT_CACHE.update(at=now, data=data)
+    return data
+
+
+@router.get("/logs")
+def log_fish() -> dict:
+    """Recent local log lines as catchable fish (LIVE only — never public)."""
+    fish: list[dict] = []
+    sources = [
+        Path(r"D:\devtools\logs\agentmemory-selfheal.log"),
+        Path(r"D:\devtools\logs\agentmemory-health-errors.log"),
+    ]
+    job_dir = PROJECT_ROOT / "workspace" / "backend-job-logs"
+    if job_dir.exists():
+        sources += sorted(job_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:6]
+    for src in sources:
+        if len(fish) >= 18 or not src.exists():
+            continue
+        try:
+            lines = src.read_text(encoding="utf-8", errors="ignore").strip().splitlines()[-4:]
+        except Exception:
+            continue
+        for ln in lines:
+            ln = ln.strip()
+            if not ln:
+                continue
+            level = "ERROR" if re.search(r"error|fail", ln, re.I) else ("WARN" if re.search(r"warn|retry", ln, re.I) else "INFO")
+            fish.append({
+                "id": f"f{len(fish)}",
+                "level": level,
+                "text": ln[:110],
+                "rarity": {"INFO": 1, "WARN": 2, "ERROR": 3}[level],
+                "source": src.name[:40],
+            })
+    return {"fish": fish}
+
+
+@router.get("/festival")
+def festival() -> dict:
+    """Latest GitHub release of this repo — release day = harvest festival."""
+    try:
+        r = httpx.get(
+            "https://api.github.com/repos/appleweiping/newroad-valley/releases/latest",
+            timeout=8.0, headers={"Accept": "application/vnd.github+json"},
+        )
+        if r.status_code == 200:
+            data = r.json()
+            date = str(data.get("published_at", ""))[:10]
+            return {
+                "latest": {"tag": data.get("tag_name"), "date": date},
+                "today": date == datetime.now().strftime("%Y-%m-%d"),
+            }
+    except Exception:
+        pass
+    return {"latest": None, "today": False}
+
+
 # ----------------------------------------------------------------- e2e smoke
 REPORT_FILE = PROJECT_ROOT / "workspace" / "v4-report.jsonl"
 SHOTS_DIR = PROJECT_ROOT / "workspace" / "v4-shots"

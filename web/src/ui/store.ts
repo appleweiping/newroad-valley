@@ -10,6 +10,8 @@ interface UIState {
   openPanel: string | null; // building id
   plantCell: number | null; // farm cell awaiting a task title
   toast: string | null;
+  fishing: boolean;
+  almanac: boolean;
   clock: { day: number; hour: number; minute: number; season: string };
   setLang(l: Lang): void;
   setLive(v: boolean): void;
@@ -20,6 +22,8 @@ interface UIState {
   setClock(c: UIState["clock"]): void;
   setPlantCell(c: number | null): void;
   setToast(t: string | null): void;
+  setFishing(v: boolean): void;
+  setAlmanac(v: boolean): void;
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -30,6 +34,8 @@ export const useUI = create<UIState>((set) => ({
   openPanel: null,
   plantCell: null,
   toast: null,
+  fishing: false,
+  almanac: false,
   clock: { day: 1, hour: 8, minute: 0, season: "春" },
   setLang: (lang) => set({ lang }),
   setLive: (live) => set({ live }),
@@ -40,4 +46,6 @@ export const useUI = create<UIState>((set) => ({
   setClock: (clock) => set({ clock }),
   setPlantCell: (plantCell) => set({ plantCell }),
   setToast: (toast) => set({ toast }),
+  setFishing: (fishing) => set({ fishing }),
+  setAlmanac: (almanac) => set({ almanac }),
 }));

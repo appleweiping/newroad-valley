@@ -102,6 +102,21 @@ export class TownScene extends Phaser.Scene {
   private demoCrops: DemoCrop[] = [];
   private actionCooldown = 0;
   private playerShadow!: Phaser.GameObjects.Ellipse;
+  // ---- v5 state
+  private ores: string[] = [];
+  private fishCaught: string[] = [];
+  private ach: Record<string, boolean> = {};
+  private points = 0;
+  private fishPool: { text: string; level: string; rarity: number }[] | null = null;
+  private treeImgs: Phaser.GameObjects.Image[] = [];
+  private grassLayer!: Phaser.Tilemaps.TilemapLayer;
+  private pathLayer!: Phaser.Tilemaps.TilemapLayer;
+  private currentSeason = "";
+  private snow: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private festivalToday = false;
+  private festivalDecor: Phaser.GameObjects.GameObject[] = [];
+  private lastFirework = 0;
+  private mineZone!: Phaser.Geom.Rectangle;
 
   constructor() {
     super("town");
@@ -117,12 +132,17 @@ export class TownScene extends Phaser.Scene {
       this.clockMin = save.clockMin;
       this.harvested = save.harvested;
       this.demoCrops = save.demoCrops ?? [];
+      this.ores = save.ores ?? [];
+      this.fishCaught = save.fish ?? [];
+      this.ach = save.ach ?? {};
+      this.points = save.points ?? 0;
     }
 
     this.buildGround();
     this.buildDecor();
     this.buildPlaza();
     this.buildBuildings();
+    this.buildMine();
     this.buildPlayer(save?.px, save?.py);
     this.buildNpcs();
     this.buildAnimals();
@@ -130,6 +150,7 @@ export class TownScene extends Phaser.Scene {
     this.bindInput();
     this.bindBus();
     void this.initFarm();
+    void this.initFestival();
 
     this.cameras.main.fadeIn(750, 26, 20, 35);
     this.cameras.main.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
@@ -180,6 +201,8 @@ export class TownScene extends Phaser.Scene {
     water.setDepth(0);
     grass.setDepth(1);
     path.setDepth(2);
+    this.grassLayer = grass;
+    this.pathLayer = path;
 
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
@@ -214,7 +237,40 @@ export class TownScene extends Phaser.Scene {
         ? this.add.image(t.tx * TILE + 8, (t.ty + 1) * TILE, "decor-oak-small", 1)
         : this.add.image(t.tx * TILE + 8, (t.ty + 1) * TILE, "decor-oak");
       img.setOrigin(0.5, 1).setDepth((t.ty + 1) * TILE);
+      this.treeImgs.push(img);
     }
+  }
+
+  // -------------------------------------------------------------------- mine
+  /** entrance to the tech-debt mines, set into the western meadow */
+  private buildMine(): void {
+    const tx = 4;
+    const ty = 27; // bottom row of the arch
+    this.add.image(tx * TILE + 16, (ty + 1) * TILE, "prop-mine-entrance")
+      .setOrigin(0.5, 1).setDepth((ty + 1) * TILE - 2);
+    for (let y = ty - 1; y <= ty; y++) {
+      for (let x = tx; x <= tx + 1; x++) this.collide[y][x] = true;
+    }
+    // doorway tile stays walkable just below the arch
+    this.mineZone = new Phaser.Geom.Rectangle((tx - 1) * TILE, ty * TILE, TILE * 4, TILE * 2.4);
+    this.add
+      .text(tx * TILE + 16, (ty - 2) * TILE, "技术债矿洞", {
+        fontFamily: "'Microsoft YaHei', sans-serif",
+        fontSize: "8px", color: "#e6dcff", stroke: "#241a2e", strokeThickness: 3, resolution: 4,
+      })
+      .setOrigin(0.5, 1).setDepth(10000);
+  }
+
+  private enterMine(): void {
+    if (this.uiLock) return;
+    this.uiLock = true;
+    audio.door();
+    this.autosave();
+    this.cameras.main.fadeOut(260, 8, 6, 12);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.run("mine", { level: 1, returnTx: 5, returnTy: 28 });
+      this.scene.sleep();
+    });
   }
 
   // ------------------------------------------------------------------- plaza
@@ -370,6 +426,9 @@ export class TownScene extends Phaser.Scene {
     const minute = Math.floor(this.clockMin % 60);
     const season = ["春", "夏", "秋", "冬"][Math.floor(((this.day - 1) % 28) / 7)];
     bus.emit("clock:tick", { day: this.day, hour, minute, season });
+    if (season !== this.currentSeason) this.applySeason(season);
+    this.fireworksTick();
+    this.checkAchievements();
 
     const h = this.clockMin / 60;
     let a = 0;
@@ -422,6 +481,10 @@ export class TownScene extends Phaser.Scene {
           return;
         }
       }
+      if (this.mineZone.contains(world.x, world.y) && this.mineZone.contains(this.player.x, this.player.y)) {
+        this.enterMine();
+        return;
+      }
       this.setMoveTo(world.x, world.y);
     });
   }
@@ -443,6 +506,16 @@ export class TownScene extends Phaser.Scene {
     });
     bus.on("farm:plant-confirm", ({ cell, title }) => {
       void this.plantCrop(cell, title);
+    });
+    bus.on("ore:collected", ({ title, kind, repo }) => {
+      this.ores.push(`[${kind}] ${repo}: ${title}`);
+      this.points += kind === "fixme" ? 3 : kind === "hotspot" ? 2 : 1;
+      bus.emit("toast", { text: `⛏ 采得债务矿石：${title.slice(0, 36)}（建设点 +${kind === "fixme" ? 3 : kind === "hotspot" ? 2 : 1}）` });
+      this.checkAchievements();
+      this.autosave();
+    });
+    bus.on("fishing:result", ({ quality }) => {
+      void this.resolveCatch(quality);
     });
   }
 
@@ -645,7 +718,7 @@ export class TownScene extends Phaser.Scene {
   // -------------------------------------------------------------------- save
   private autosave(): void {
     writeSave({
-      version: 1,
+      version: 2,
       day: this.day,
       clockMin: this.clockMin,
       px: this.player.x,
@@ -653,7 +726,184 @@ export class TownScene extends Phaser.Scene {
       harvested: this.harvested,
       demoCrops: this.demoCrops,
       lang: "zh",
+      ores: this.ores,
+      fish: this.fishCaught,
+      ach: this.ach,
+      points: this.points,
     });
+  }
+
+  // ----------------------------------------------------------- achievements
+  private grantAch(id: string, name: string): void {
+    if (this.ach[id]) return;
+    this.ach[id] = true;
+    audio.harvest();
+    bus.emit("toast", { text: `🏆 成就解锁：${name}` });
+    bus.emit("ach:unlocked", { name });
+    this.autosave();
+  }
+
+  private checkAchievements(): void {
+    if (this.harvested >= 1) this.grantAch("harvest1", "第一捧收成");
+    if (this.harvested >= 5) this.grantAch("harvest5", "勤恳农夫（收获×5）");
+    if (this.harvested >= 20) this.grantAch("harvest20", "谷物大亨（收获×20）");
+    if (this.ores.length >= 1) this.grantAch("ore1", "第一块技术债矿石");
+    if (this.ores.length >= 10) this.grantAch("ore10", "债务清道夫（矿石×10）");
+    if (this.fishCaught.length >= 1) this.grantAch("fish1", "第一条日志鱼");
+    if (this.fishCaught.length >= 10) this.grantAch("fish10", "日志垂钓宗师（鱼×10）");
+    if (this.day >= 7) this.grantAch("week1", "在山谷住满一周");
+    if (this.day >= 28) this.grantAch("season1", "四季轮转之证");
+  }
+
+  // ---------------------------------------------------------------- fishing
+  private nearWater(): boolean {
+    const tx = Math.floor(this.player.x / TILE);
+    const ty = Math.floor((this.player.y + 12) / TILE);
+    for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, 1]] as const) {
+      const x = tx + dx;
+      const y = ty + dy;
+      if (x >= 0 && y >= 0 && x < MAP_W && y < MAP_H && this.layout.isWater[y][x]) return true;
+    }
+    return false;
+  }
+
+  private async resolveCatch(quality: number): Promise<void> {
+    this.uiLock = false;
+    if (quality <= 0) {
+      bus.emit("toast", { text: "💨 鱼跑了……再试一次" });
+      return;
+    }
+    if (!this.fishPool) {
+      try {
+        const d = await getData<{ fish: { text: string; level: string; rarity: number }[] }>(
+          "/api/town/logs", "fish.json",
+        );
+        this.fishPool = d.fish;
+      } catch {
+        this.fishPool = [];
+      }
+    }
+    if (!this.fishPool || this.fishPool.length === 0) {
+      bus.emit("toast", { text: "🌊 今天水里很安静" });
+      return;
+    }
+    // perfect catches bias toward rare (ERROR-grade) fish
+    const pool = this.fishPool.filter((f) => (quality >= 2 ? f.rarity >= 2 : f.rarity <= 2));
+    const pick = (pool.length ? pool : this.fishPool)[Math.floor(Math.random() * (pool.length || this.fishPool.length))];
+    this.fishCaught.push(`[${pick.level}] ${pick.text}`);
+    audio.water();
+    const stars = pick.rarity >= 3 ? "★★★" : pick.rarity === 2 ? "★★" : "★";
+    bus.emit("toast", { text: `🎣 钓到日志鱼 ${stars}：${pick.text.slice(0, 40)}` });
+    bus.emit("fish:caught", { text: pick.text, level: pick.level });
+    this.checkAchievements();
+    this.autosave();
+  }
+
+  // ---------------------------------------------------------------- seasons
+  private applySeason(season: string): void {
+    this.currentSeason = season;
+    const tints: Record<string, { grass: number; path: number; tree: number }> = {
+      "春": { grass: 0xffffff, path: 0xffffff, tree: 0xffffff },
+      "夏": { grass: 0xeaffdc, path: 0xfff3da, tree: 0xe4ffd8 },
+      "秋": { grass: 0xffd9a0, path: 0xffe9c8, tree: 0xffa860 },
+      "冬": { grass: 0xd8e6f6, path: 0xe8eef8, tree: 0xcfe0f0 },
+    };
+    const t = tints[season] ?? tints["春"];
+    this.grassLayer.setTint(t.grass);
+    this.pathLayer.setTint(t.path);
+    for (const img of this.treeImgs) img.setTint(t.tree);
+    if (season === "冬") {
+      if (!this.snow) {
+        if (!this.textures.exists("snowdot")) {
+          const g = this.make.graphics({ x: 0, y: 0 }, false);
+          g.fillStyle(0xffffff, 1);
+          g.fillRect(0, 0, 2, 2);
+          g.generateTexture("snowdot", 2, 2);
+          g.destroy();
+        }
+        const cam = this.cameras.main;
+        this.snow = this.add.particles(0, 0, "snowdot", {
+          x: { min: 0, max: cam.width },
+          y: -6,
+          lifespan: 9000,
+          speedY: { min: 18, max: 42 },
+          speedX: { min: -12, max: 12 },
+          alpha: { start: 0.9, end: 0.4 },
+          quantity: 2,
+          frequency: 110,
+        }).setScrollFactor(0).setDepth(19999);
+      }
+      this.snow.start();
+    } else {
+      this.snow?.stop();
+    }
+    if (season !== "春") bus.emit("toast", { text: `🍂 季节更替：${season}天来了` });
+  }
+
+  // --------------------------------------------------------------- festival
+  private async initFestival(): Promise<void> {
+    interface Fest { today: boolean; latest: { tag: string; date: string } | null }
+    let fest: Fest | null = null;
+    try {
+      if (currentMode() === "live") {
+        fest = await getData<Fest>("/api/town/festival", "__none__.json");
+      } else {
+        const r = await fetch("https://api.github.com/repos/appleweiping/newroad-valley/releases/latest");
+        if (r.ok) {
+          const data = await r.json();
+          const date = String(data.published_at ?? "").slice(0, 10);
+          const today = new Date().toISOString().slice(0, 10);
+          fest = { today: date === today, latest: { tag: data.tag_name, date } };
+        }
+      }
+    } catch {
+      fest = null;
+    }
+    if (fest?.today) {
+      this.festivalToday = true;
+      this.decorateFestival(fest.latest?.tag ?? "");
+    }
+  }
+
+  private decorateFestival(tag: string): void {
+    // bunting strung across the plaza between the lamp posts
+    const colors = [0xff8a8a, 0xffd27a, 0x9be564, 0x8ad2ff, 0xd0a4ff];
+    for (let x = 27; x <= 37; x++) {
+      const flag = this.add.triangle(
+        x * TILE + 8, 16.4 * TILE + ((x % 2) ? 3 : 0),
+        0, 0, 8, 0, 4, 7,
+        colors[x % colors.length],
+      ).setDepth(15001);
+      this.festivalDecor.push(flag);
+    }
+    bus.emit("toast", { text: `🎉 今天是丰收节（${tag} 发布日）！夜里广场有烟花` });
+    this.grantAch("festival1", "赶上了丰收节");
+  }
+
+  private fireworksTick(): void {
+    if (!this.festivalToday || this.nightOverlay.fillAlpha < 0.3) return;
+    if (this.time.now - this.lastFirework < 3600) return;
+    this.lastFirework = this.time.now;
+    if (!this.textures.exists("snowdot")) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(0, 0, 2, 2);
+      g.generateTexture("snowdot", 2, 2);
+      g.destroy();
+    }
+    const x = (28 + Math.random() * 9) * TILE;
+    const y = (13 + Math.random() * 3) * TILE;
+    const tint = [0xff8a8a, 0xffd27a, 0x9be564, 0x8ad2ff, 0xd0a4ff][Math.floor(Math.random() * 5)];
+    const burst = this.add.particles(x, y, "snowdot", {
+      speed: { min: 30, max: 85 },
+      lifespan: 750,
+      quantity: 26,
+      tint,
+      alpha: { start: 1, end: 0 },
+      emitting: false,
+    }).setDepth(19998);
+    burst.explode(26, x, y);
+    this.time.delayedCall(1000, () => burst.destroy());
   }
 
   // ------------------------------------------------------------------ update
@@ -775,7 +1025,19 @@ export class TownScene extends Phaser.Scene {
         }
         return;
       }
-      // 2) npc
+      // 2) mine entrance
+      if (this.mineZone.contains(this.player.x, this.player.y)) {
+        this.enterMine();
+        return;
+      }
+      // 3) fishing at the water's edge
+      if (this.nearWater()) {
+        this.uiLock = true;
+        audio.click();
+        bus.emit("fishing:start", undefined);
+        return;
+      }
+      // 4) npc
       let best: Npc | null = null;
       let bestD = TILE * 2.6;
       for (const n of this.npcs) {
@@ -1019,6 +1281,12 @@ export class TownScene extends Phaser.Scene {
             break;
           }
         }
+      }
+      if (!hint && this.mineZone.contains(this.player.x, this.player.y)) {
+        hint = "按 E 进入技术债矿洞";
+      }
+      if (!hint && this.nearWater()) {
+        hint = "按 E 在水边垂钓日志鱼";
       }
       if (!hint) {
         for (const z of this.doorZones) {

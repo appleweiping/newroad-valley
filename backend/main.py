@@ -1098,7 +1098,7 @@ async def health():
 async def check_agentmemory() -> bool:
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            r = await client.get(f"{AGENTMEMORY_URL}/health")
+            r = await client.get(f"{AGENTMEMORY_URL}/agentmemory/health")
             return r.status_code == 200
     except:
         return False

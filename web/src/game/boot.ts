@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { BootScene } from "./scenes/BootScene";
 import { TownScene } from "./scenes/TownScene";
 import { InteriorScene } from "./scenes/InteriorScene";
+import { MineScene } from "./scenes/MineScene";
 import { audio } from "./audio";
 import { maybeRunV4Test } from "./v4test";
 import { GameUI } from "@/ui/GameUI";
@@ -27,7 +28,7 @@ const game = new Phaser.Game({
   // zero inflight) — a single large batch sidesteps that path entirely
   loader: { maxParallelDownloads: 128 },
   physics: { default: "arcade" },
-  scene: [BootScene, TownScene, InteriorScene],
+  scene: [BootScene, TownScene, InteriorScene, MineScene],
 });
 
 (window as unknown as Record<string, unknown>).__game = game;

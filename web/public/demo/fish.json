@@ -1,0 +1,14 @@
+{
+  "fish": [
+    { "id": "f1", "level": "INFO", "text": "service healthy · uptime 4d12h", "rarity": 1, "source": "daily-health.log" },
+    { "id": "f2", "level": "INFO", "text": "deploy finished in 21.3s", "rarity": 1, "source": "deploy.log" },
+    { "id": "f3", "level": "INFO", "text": "cache warmed: 741 pages", "rarity": 1, "source": "wiki.log" },
+    { "id": "f4", "level": "WARN", "text": "retry 1/3: upstream slow (1.8s)", "rarity": 2, "source": "bridge.log" },
+    { "id": "f5", "level": "WARN", "text": "queue depth 12 > soft limit 10", "rarity": 2, "source": "jobs.log" },
+    { "id": "f6", "level": "ERROR", "text": "ECONNRESET while syncing — recovered by selfheal", "rarity": 3, "source": "selfheal.log" },
+    { "id": "f7", "level": "INFO", "text": "memory shelved: '像素小镇 v5 技术选型'", "rarity": 1, "source": "memory.log" },
+    { "id": "f8", "level": "ERROR", "text": "panic: nil map write (caught, job retried OK)", "rarity": 3, "source": "worker.log" },
+    { "id": "f9", "level": "WARN", "text": "disk 81% — consider pruning artifacts", "rarity": 2, "source": "host.log" },
+    { "id": "f10", "level": "INFO", "text": "nightly backup verified ✓", "rarity": 1, "source": "backup.log" }
+  ]
+}

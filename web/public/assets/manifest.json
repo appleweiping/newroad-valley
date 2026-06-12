@@ -351,6 +351,26 @@
     "type": "image"
   },
   {
+    "key": "prop-ore-node",
+    "url": "assets/core/props/ore-node.png",
+    "type": "image"
+  },
+  {
+    "key": "prop-ore-node-cracked",
+    "url": "assets/core/props/ore-node-cracked.png",
+    "type": "image"
+  },
+  {
+    "key": "prop-ladder-down",
+    "url": "assets/core/props/ladder-down.png",
+    "type": "image"
+  },
+  {
+    "key": "prop-mine-entrance",
+    "url": "assets/core/props/mine-entrance.png",
+    "type": "image"
+  },
+  {
     "key": "ts-kenney-farm",
     "url": "assets/open/kenney-farm.png",
     "type": "spritesheet",

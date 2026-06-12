@@ -9,7 +9,7 @@ export interface DemoCrop {
 }
 
 export interface SaveData {
-  version: 1;
+  version: 2;
   day: number;
   clockMin: number;
   px: number;
@@ -17,17 +17,28 @@ export interface SaveData {
   harvested: number;
   demoCrops: DemoCrop[];
   lang: "zh" | "en";
+  /** v5 almanac: collected tech-debt ore titles */
+  ores: string[];
+  /** v5 almanac: caught log-fish texts */
+  fish: string[];
+  /** v5 achievements unlocked (id -> true) */
+  ach: Record<string, boolean>;
+  /** build points earned (spent in later versions) */
+  points: number;
 }
 
 const KEY = "nrv-save-v1";
+
+const DEFAULTS = { ores: [] as string[], fish: [] as string[], ach: {} as Record<string, boolean>, points: 0 };
 
 export function loadSave(): SaveData | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    const d = JSON.parse(raw) as SaveData;
-    if (d.version !== 1) return null;
-    return d;
+    const d = JSON.parse(raw) as Partial<SaveData> & { version?: number };
+    const v: number = d.version ?? 0;
+    if (v !== 1 && v !== 2) return null;
+    return { ...DEFAULTS, ...d, version: 2 } as SaveData;
   } catch {
     return null;
   }

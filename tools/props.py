@@ -147,6 +147,113 @@ PROPS["kanban"] = {
 }
 
 
+# ---- ore node 16x14: rock with glowing crystal veins (tinted per kind) -----
+PROPS["ore-node"] = {
+    "pal": {
+        "S": _rgba((116, 110, 122)), "s": _rgba((88, 82, 96)),
+        "d": _rgba((62, 56, 70)),
+        "C": _rgba((150, 220, 255)), "c": _rgba((96, 170, 230)),
+    },
+    "rows": [
+        "....##SSS##.....",
+        "..##SSSSSSS#....",
+        ".#SSSCcSSSSS#...",
+        ".#SSCCcSSssS#...",
+        "#SSSCcSSSssS#...",
+        "#SsSScSSCCsS#...",
+        "#SsSSSSCCcss#...",
+        "#SssSSSCcsss#...",
+        ".#SsssSSssd#....",
+        ".#Sssddsdd#.....",
+        "..##ddddd##.....",
+        "....#####.......",
+    ],
+}
+
+# ---- cracked ore node (stage 2) --------------------------------------------
+PROPS["ore-node-cracked"] = {
+    "pal": {
+        "S": _rgba((116, 110, 122)), "s": _rgba((88, 82, 96)),
+        "d": _rgba((62, 56, 70)), "K": _rgba((30, 26, 36)),
+        "C": _rgba((150, 220, 255)), "c": _rgba((96, 170, 230)),
+    },
+    "rows": [
+        "....##SSS##.....",
+        "..##SSKSSSS#....",
+        ".#SSSCKSSSSS#...",
+        ".#SSCCcKSssS#...",
+        "#SSSCcSKSssS#...",
+        "#SsSScKSCCsS#...",
+        "#SsSSKSCCcss#...",
+        "#SssKSSCcsss#...",
+        ".#SsssKSssd#....",
+        ".#SssddKdd#.....",
+        "..##ddddd##.....",
+        "....#####.......",
+    ],
+}
+
+# ---- ladder down 16x16 ------------------------------------------------------
+PROPS["ladder-down"] = {
+    "pal": {
+        "K": _rgba((24, 20, 30)), "W": WOOD, "L": WOOD_L,
+    },
+    "rows": [
+        "#KKKKKKKKKKKKKK#",
+        "#KKKKKKKKKKKKKK#",
+        "#KK#LWWWWWWL#KK#",
+        "#KK#W######W#KK#",
+        "#KK#WWWWWWWW#KK#",
+        "#KK#W######W#KK#",
+        "#KK#WWWWWWWW#KK#",
+        "#KK#W######W#KK#",
+        "#KK#WWWWWWWW#KK#",
+        "#KK#W######W#KK#",
+        "#KK#WWWWWWWW#KK#",
+        "#KKKKKKKKKKKKKK#",
+    ],
+}
+
+# ---- mine entrance 32x28: dark arch set into rock ---------------------------
+PROPS["mine-entrance"] = {
+    "pal": {
+        "S": _rgba((124, 118, 130)), "s": _rgba((94, 88, 102)),
+        "d": _rgba((66, 60, 74)), "K": _rgba((22, 18, 28)),
+        "W": WOOD, "L": WOOD_L,
+    },
+    "rows": [
+        "......####################......",
+        "....##SSSSSSSSSSSSSSSSSSSS##....",
+        "..##SSSSSSSSSSSSSSSSSSSSSSSS##..",
+        ".#SSSSssSSSSSSSSSSSSSSssSSSSSS#.",
+        ".#SSsSSSSSSSSSSSSSSSSSSSSsSSSS#.",
+        "#SSSSSS##############SSSSSSSSSS#",
+        "#SSSSS#KKKKKKKKKKKKKK#SSsSSSSSS#",
+        "#SsSS#KKKKKKKKKKKKKKKK#SSSSSdSS#",
+        "#SSSS#KKKKKKKKKKKKKKKK#SSSSSSSS#",
+        "#SSS#KKKKKKKKKKKKKKKKKK#SSsSSSS#",
+        "#SsS#KKKKKKKKKKKKKKKKKK#SSSSSsS#",
+        "#SSS#KKKKLKKKKKKKKLKKKK#SdSSSSS#",
+        "#SSS#KKKKWKKKKKKKKWKKKK#SSSSSSS#",
+        "#SsS#KKKKWKKKKKKKKWKKKK#SSsSSsS#",
+        "#SSS#KKKKWKKKKKKKKWKKKK#SSSSSSS#",
+        "#SSS#KKKKWKKKKKKKKWKKKK#SSSdSSS#",
+        "#SdS#KKKKWKKKKKKKKWKKKK#SSSSSsS#",
+        "#SSS#KKKKWKKKKKKKKWKKKK#SsSSSSS#",
+        "#SSS#KKKKWKKKKKKKKWKKKK#SSSSSSS#",
+        "#SsS#KKKKWKKKKKKKKWKKKK#SSSdSSS#",
+        "#SSS#KKKKKKKKKKKKKKKKKK#SSSSSsS#",
+        "#SSS#KKKKKKKKKKKKKKKKKK#SsSSSSS#",
+        "#SsS#KKKKKKKKKKKKKKKKKK#SSSSSSS#",
+        "#SSS#KKKKKKKKKKKKKKKKKK#SSSdSSS#",
+        "#dSS#KKKKKKKKKKKKKKKKKK#SSSSSdS#",
+        "#SSS#KKKKKKKKKKKKKKKKKK#SsSSSSS#",
+        "#ddd#KKKKKKKKKKKKKKKKKK#ddddddd#",
+        "################################",
+    ],
+}
+
+
 def draw_prop(prop_id: str, scale: int = 1) -> Image.Image:
     spec = PROPS[prop_id]
     pal = spec["pal"]
